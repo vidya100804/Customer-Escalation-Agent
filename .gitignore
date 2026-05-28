@@ -1,0 +1,10 @@
+.env
+.sixth/
+.playwright-mcp/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local screenshots and ad-hoc artifacts
+customer-escalation-ui.png

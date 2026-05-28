@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Escalation Agent — AI Support Operations Console</title>
+    <meta name="description" content="AI-powered customer support escalation analysis and root cause investigation dashboard. Reduce engineering interruptions.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Sound Alerts for YES Escalation alarms -->
+    <audio id="escalation-alarm" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-500.wav" preload="auto"></audio>
+
+    <div class="glow-container">
+        <div class="glow-orb" id="orb-primary"></div>
+        <div class="glow-orb" id="orb-secondary"></div>
+    </div>
+
+    <div class="app-layout">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-brain-circuit pulse-slow"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>Escalation Agent</h1>
+                    <span class="subtext">Support Copilot v1.0.0</span>
+                </div>
+            </div>
+
+            <div class="agent-status-panel">
+                <div class="status-indicator">
+                    <span class="status-dot online"></span>
+                    <span class="status-label">Agent: Active</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Left Side: Controls & Input -->
+            <section class="left-section">
+                <!-- Presets Card -->
+                <div class="glass-card" id="presets-card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-list-check icon-blue"></i>
+                        <h2>Demo Scenarios</h2>
+                    </div>
+                    <p class="card-desc">Select a preset customer case to witness the agent's contextual investigation workflow instantly.</p>
+                    <div class="preset-grid">
+                        <button type="button" class="preset-btn active" id="btn-preset-stripe" onclick="loadPreset('stripe')">
+                            <span class="preset-emoji"><i class="fa-brands fa-stripe"></i></span>
+                            <span class="preset-title">Stripe Payment Decline</span>
+                            <span class="preset-tag p2">P2</span>
+                        </button>
+                        <button type="button" class="preset-btn" id="btn-preset-ratelimit" onclick="loadPreset('ratelimit')">
+                            <span class="preset-emoji"><i class="fa-solid fa-gauge-high"></i></span>
+                            <span class="preset-title">API Rate Throttled</span>
+                            <span class="preset-tag p1">P1</span>
+                        </button>
+                        <button type="button" class="preset-btn" id="btn-preset-outage" onclick="loadPreset('outage')">
+                            <span class="preset-emoji"><i class="fa-solid fa-circle-exclamation"></i></span>
+                            <span class="preset-title">Svc Degraded Outage</span>
+                            <span class="preset-tag p0">P0</span>
+                        </button>
+                        <button type="button" class="preset-btn" id="btn-preset-custom" onclick="loadPreset('custom')">
+                            <span class="preset-emoji"><i class="fa-solid fa-keyboard"></i></span>
+                            <span class="preset-title">Manual / Custom Case</span>
+                            <span class="preset-tag p3">P3</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input Form -->
+                <div class="glass-card" id="input-card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-ticket icon-cyan"></i>
+                        <h2>Escalation Form</h2>
+                    </div>
+                    <form id="escalation-form" onsubmit="handleFormSubmit(event)">
+                        <div class="form-group">
+                            <label for="input-email">Customer Email</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-envelope"></i>
+                                <input type="email" id="input-email" required placeholder="customer@example.com" value="customer@example.com">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="input-priority">Priority Tier</label>
+                                <div class="input-wrapper custom-select-wrapper" id="custom-select-wrapper">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <input type="hidden" id="input-priority" value="P2">
+                                    <div class="custom-select-trigger" id="custom-select-trigger">
+                                        <span class="custom-select-value">🟡 P2 - Medium Degradation</span>
+                                        <i class="fa-solid fa-chevron-down select-chevron"></i>
+                                    </div>
+                                    <div class="custom-select-dropdown" id="custom-select-dropdown">
+                                        <div class="custom-select-option" data-value="P0">🔴 P0 - Critical Outage</div>
+                                        <div class="custom-select-option" data-value="P1">🟠 P1 - High Severity</div>
+                                        <div class="custom-select-option selected" data-value="P2">🟡 P2 - Medium Degradation</div>
+                                        <div class="custom-select-option" data-value="P3">🟢 P3 - Low Priority</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="input-reporter">Support Agent</label>
+                                <div class="input-wrapper">
+                                    <i class="fa-solid fa-user-tie"></i>
+                                    <input type="text" id="input-reporter" required placeholder="Sarah Jenkins" value="Sarah J.">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="input-issue">Customer Reported Issue Summary</label>
+                            <div class="input-wrapper textarea-wrapper">
+                                <i class="fa-solid fa-comment-dots"></i>
+                                <textarea id="input-issue" required placeholder="Describe what the user reported..." rows="4">Payment is continuously failing during checkout with an error. User says their card is active and needs help upgrading to Pro immediately.</textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="btn-submit-investigation">
+                            <span class="btn-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Analyze Escalation</span>
+                            <span class="spinner-container"><i class="fa-solid fa-spinner fa-spin"></i> Running Agent Investigation...</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Right Side: Data Inspection Panels & Agent Reports -->
+            <section class="right-section">
+                <!-- Investigation Pipeline Loading Overlay -->
+                <div class="pipeline-loader hidden" id="pipeline-loader">
+                    <div class="pipeline-header">
+                        <i class="fa-solid fa-magnifying-glass-chart fa-spin text-cyan"></i>
+                        <h3>Agent Core Pipeline Running</h3>
+                        <p>Executing parallel diagnostics across 4 support tools...</p>
+                    </div>
+                    <div class="pipeline-steps">
+                        <div class="step-item" id="step-user">
+                            <i class="fa-solid fa-circle-notch fa-spin step-icon-pending"></i>
+                            <div class="step-details">
+                                <span class="step-title">Querying User Account Data</span>
+                                <span class="step-subtext">Fetching tier status, logins and activity counts...</span>
+                            </div>
+                        </div>
+                        <div class="step-item" id="step-payment">
+                            <i class="fa-solid fa-circle-notch fa-spin step-icon-pending"></i>
+                            <div class="step-details">
+                                <span class="step-title">Fetching Payment Gateway Logs</span>
+                                <span class="step-subtext">Extracting charge IDs, billing attempts and limits...</span>
+                            </div>
+                        </div>
+                        <div class="step-item" id="step-logs">
+                            <i class="fa-solid fa-circle-notch fa-spin step-icon-pending"></i>
+                            <div class="step-details">
+                                <span class="step-title">Streaming Application Server Logs</span>
+                                <span class="step-subtext">Grep matching errors & timeout latency spikes...</span>
+                            </div>
+                        </div>
+                        <div class="step-item" id="step-tickets">
+                            <i class="fa-solid fa-circle-notch fa-spin step-icon-pending"></i>
+                            <div class="step-details">
+                                <span class="step-title">Scanning Previous Ticket History</span>
+                                <span class="step-subtext">Retrieving solved resolutions and related duplicates...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pipeline-thinking">
+                        <div class="thinking-brain"><i class="fa-solid fa-brain pulse-fast"></i></div>
+                        <div class="thinking-text">Consolidating technical context and consulting Decision Prompt Tree...</div>
+                    </div>
+                </div>
+
+                <!-- Raw Diagnostic Data Board -->
+                <div class="glass-card full-height" id="diagnostics-card">
+                    <div class="card-header space-between">
+                        <div class="header-left">
+                            <i class="fa-solid fa-database icon-purple"></i>
+                            <h2>Retrieved Technical Diagnostic Logs</h2>
+                        </div>
+                        <div class="tab-selectors">
+                            <button type="button" class="tab-btn active" onclick="switchTab('user-tab')">User DB</button>
+                            <button type="button" class="tab-btn" onclick="switchTab('stripe-tab')">Payment</button>
+                            <button type="button" class="tab-btn" onclick="switchTab('logs-tab')">App Logs</button>
+                            <button type="button" class="tab-btn" onclick="switchTab('tickets-tab')">Past Tickets</button>
+                        </div>
+                    </div>
+                    <div class="source-strip" id="diag-source-summary">Preset demo data loaded. Run an investigation to replace this panel with backend evidence.</div>
+
+                    <div class="tab-contents">
+                        <!-- User Tab -->
+                        <div class="tab-panel active" id="user-tab">
+                            <div class="meta-info-grid">
+                                <div class="meta-item"><span class="meta-label">User ID</span><span class="meta-value text-cyan" id="meta-user-id">usr_12345</span></div>
+                                <div class="meta-item"><span class="meta-label">Name</span><span class="meta-value" id="meta-user-name">John Doe</span></div>
+                                <div class="meta-item"><span class="meta-label">Account Tier</span><span class="meta-value" id="meta-user-tier">Pro</span></div>
+                                <div class="meta-item"><span class="meta-label">Subscription</span><span class="meta-value" id="meta-user-sub">Active</span></div>
+                            </div>
+                            <div class="json-viewer-header">Raw User Schema Response:</div>
+                            <pre class="json-code" id="code-user-db">{\n  "user_id": "usr_12345",\n  "email": "customer@example.com",\n  "name": "John Doe",\n  "account_tier": "Pro",\n  "subscription_status": "active",\n  "last_login": "2026-05-26T14:22:00Z",\n  "api_calls_last_30_days": 15420\n}</pre>
+                        </div>
+
+                        <!-- Stripe/Payment Tab -->
+                        <div class="tab-panel" id="stripe-tab">
+                            <div class="meta-info-grid">
+                                <div class="meta-item"><span class="meta-label">Plan</span><span class="meta-value" id="meta-stripe-plan">Pro Monthly ($29.99)</span></div>
+                                <div class="meta-item"><span class="meta-label">Status</span><span class="meta-value" id="meta-stripe-status">Active</span></div>
+                                <div class="meta-item"><span class="meta-label">Failed Attempts</span><span class="meta-value text-red" id="meta-stripe-failed">2</span></div>
+                                <div class="meta-item"><span class="meta-label">Gateway Error</span><span class="meta-value text-orange" id="meta-stripe-error">card_declined</span></div>
+                            </div>
+                            <div class="json-viewer-header">Payment Gateway Customer Subscription Log:</div>
+                            <pre class="json-code" id="code-stripe">{\n  "plan": "Pro Monthly - $29.99",\n  "status": "active",\n  "failed_payment_attempts": 2,\n  "last_error": "card_declined",\n  "last_payment_date": "2026-05-01T00:00:00Z"\n}</pre>
+                        </div>
+
+                        <!-- App Logs Tab -->
+                        <div class="tab-panel" id="logs-tab">
+                            <div class="log-console-header">
+                                <span class="console-dot-red"></span>
+                                <span class="console-dot-yellow"></span>
+                                <span class="console-dot-green"></span>
+                                <span class="console-title">payment-service --stdout</span>
+                            </div>
+                            <pre class="log-code-block" id="code-logs">2026-05-26T21:05:15Z [ERROR] service=payment-service error_code=PAY_503 message="Payment failed: card declined"
+2026-05-26T21:03:45Z [WARNING] service=payment-service error_code=PAY_RETRY message="Retry attempt 2/3"
+2026-05-26T21:00:30Z [INFO] service=api-gateway message="User checkout initiated"</pre>
+                        </div>
+
+                        <!-- Tickets Tab -->
+                        <div class="tab-panel" id="tickets-tab">
+                            <div class="tickets-timeline" id="code-tickets">
+                                <div class="timeline-event">
+                                    <div class="event-marker resolved"></div>
+                                    <div class="event-content">
+                                        <div class="event-header">
+                                            <span class="ticket-id">ZD-9876</span>
+                                            <span class="ticket-status resolved">Solved</span>
+                                        </div>
+                                        <h4 class="event-subject">Payment failed</h4>
+                                        <p class="event-res"><strong>Resolution:</strong> User updated payment method details via billing tab. Subscription resumed automatically.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent Output Report Card -->
+                <div class="glass-card full-height hidden" id="report-card">
+                    <div class="card-header space-between">
+                        <div class="header-left">
+                            <i class="fa-solid fa-shield-halved icon-emerald"></i>
+                            <h2>Agent Escalation Assessment</h2>
+                        </div>
+                        <div class="report-pill-bar">
+                            <div class="badge-confidence">
+                                <span>Confidence:</span>
+                                <span class="confidence-pct text-cyan" id="report-confidence">96%</span>
+                            </div>
+                            <div class="badge-confidence">
+                                <span>Mode:</span>
+                                <span class="confidence-pct text-cyan" id="report-analysis-mode">demo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Root Escalation Banner -->
+                    <div class="escalate-banner-no" id="report-escalate-banner">
+                        <div class="banner-icon">
+                            <i class="fa-solid fa-circle-check" id="banner-icon-ref"></i>
+                        </div>
+                        <div class="banner-body">
+                            <h3 id="report-escalate-decision">NO - Support Can Resolve</h3>
+                            <p id="report-escalate-reason">Payment declined is a bank failure. Give user self-service link.</p>
+                        </div>
+                    </div>
+
+                    <!-- Summary Analysis -->
+                    <div class="report-section">
+                        <h3><i class="fa-solid fa-file-invoice"></i> Summary</h3>
+                        <p class="summary-paragraph" id="report-summary">User's payment is failing because their credit card was declined by Stripe.</p>
+                    </div>
+
+                    <!-- Findings & Root Cause Grid -->
+                    <div class="report-row">
+                        <div class="report-col">
+                            <h3><i class="fa-solid fa-terminal"></i> Technical Findings</h3>
+                            <ul class="findings-list" id="report-findings">
+                                <li>User John Doe is on the 'Pro Monthly' tier ($29.99)</li>
+                                <li>Stripe status shows 2 failed payment attempts in 24h</li>
+                                <li>Error code returned by Stripe API: card_declined</li>
+                            </ul>
+                        </div>
+                        <div class="report-col">
+                            <h3><i class="fa-solid fa-microscope"></i> Root Cause Analysis</h3>
+                            <div class="root-cause-box" id="report-root-cause">
+                                The card issuer declined the payment. This is generally due to card expiry, incorrect card verification details or automated security holds by the merchant bank.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Plan -->
+                    <div class="report-section">
+                        <h3><i class="fa-solid fa-list-ol"></i> Step-by-Step Action Plan</h3>
+                        <div class="action-checklist" id="report-actions">
+                            <div class="action-item">
+                                <input type="checkbox" id="action-1" checked>
+                                <label for="action-1">Send the customer a direct link to update their credentials: app.example.com/billing</label>
+                            </div>
+                            <div class="action-item">
+                                <input type="checkbox" id="action-2">
+                                <label for="action-2">Request customer to contact bank authorization if billing info is correct</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <button type="button" class="btn-secondary" onclick="resetApp()"><i class="fa-solid fa-rotate-left"></i> Run Another Escalation</button>
+                        <button type="button" class="btn-primary" onclick="copySlackReport()"><i class="fa-brands fa-slack"></i> Copy Slack Broadcast</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Script file -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
